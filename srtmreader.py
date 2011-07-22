@@ -102,7 +102,7 @@ def test():
     assert get_elevation(64.9995, -20.001) in (782, )
     assert get_elevation(64.9995, -20.9990) in (265, )
     assert get_elevation(64.0014, -20.9990) in (388, )
-    #Test South West
+    #Test South West (Requires s32w70.hgt)
     assert get_elevation(-31.2030, -69.8537) in (4569, )
     assert get_elevation(-31.0005, -69.001) in (2223, )
     assert get_elevation(-31.9995, -69.001) in (2047, )
