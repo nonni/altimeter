@@ -1,0 +1,6 @@
+A simple SRTM file reader to read 3' DEM data.
+
+DEM file format info: http://dds.cr.usgs.gov/srtm/version2_1/Documentation/Quickstart.pdf
+Interpolation method from http://trac.openstreetmap.org/browser/applications/utils/import/srtm2wayinfo/python/srtm.py
+Tested with data from http://www.viewfinderpanoramas.org/dem3.html
+
