@@ -4,4 +4,7 @@ DEM file format info: http://dds.cr.usgs.gov/srtm/version2_1/Documentation/Quick
 Interpolation method from http://trac.openstreetmap.org/browser/applications/utils/import/srtm2wayinfo/python/srtm.py
 Tested with data from http://www.viewfinderpanoramas.org/dem3.html
 
-
+TODO/IDEAS:
+    * Take list of lat,lon points and return list of elevation.
+    * Verify that interpolation is giving better results than non-interpolated observations.
+    * Catch errors for points larger than x.999, where interpolation will fail.
