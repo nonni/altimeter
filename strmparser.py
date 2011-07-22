@@ -6,6 +6,8 @@ def _get_offset(x, y, size):
     return (x + size * (size - y - 1)) * 2
 
 def get_elevation(lat, lon):
+    """
+    """
     #Prepare lat and lon variables.
     #SRTM filenames use directions, find which dir our lat,lon
     #values belong to.
@@ -15,7 +17,9 @@ def get_elevation(lat, lon):
     int_lon = int(lon)
     frac_lat = int_lat - lat
     frac_lon = int_lon - lon
-    srtm_path = 'data/%s%02d%s%03d.hgt' % (lat_dir, abs(int_lat), lon_dir, abs(int_lon))
+
+    
+    srtm_path = 'data/%s%02d%s%03d.hgt' % (lat_dir, abs(math.floor(lat)), lon_dir, abs(math.floor(lon)))
     print "Search path: %s" % srtm_path
     print "lat: %s, lon: %s" % (lat, lon)
     print "int_lat: %s, int_lon: %s" % (int_lat, int_lon)
@@ -32,14 +36,22 @@ def get_elevation(lat, lon):
             if data_size not in (1201,):
                 return None
     
-            x = abs(frac_lon * data_size)
-            y = abs(frac_lat * data_size)
+            if frac_lon > 0:
+                x = (1 - frac_lon) * data_size 
+            else:
+                x = abs(frac_lon) * data_size
+
+            if frac_lat > 0:
+                y = (1 - frac_lat) * data_size
+            else:
+                y = abs(frac_lat) * data_size
+
             print "x: %s, y: %s" % (x,y)
             int_x = int(x)
             frac_x = x - int_x
             int_y = int(y)
             frac_y = y - int_y
-            print "Offset is %s" % _get_offset(int_x, int_y, data_size)
+            print "Offset is %f" % _get_offset(int_x, int_y, data_size)
 
             f.seek(_get_offset(int_x, int_y, data_size))
             s = struct.unpack('>h', f.read(2))
@@ -60,3 +72,31 @@ def get_elevation(lat, lon):
     else:
         print "File not found"
         return None
+
+def test():
+    #Test South East (Requires s04e036.hgt)
+    assert get_elevation(-3.2428,36.4761)[0] in (2498, )
+    assert get_elevation(-3.001,36.00)[0] in (839, )
+    assert get_elevation(-3.9999,36.00)[0] in (1240, )
+    assert get_elevation(-3.9999,36.9999)[0] in (1141, )
+    assert get_elevation(-3.0001,36.9999)[0] in (1312, )
+    #Test North East (Requires n47e009.hgt)
+    assert get_elevation(47.2648,9.3515)[0] in (1739, )
+    assert get_elevation(47.0,9.0)[0] in (2784, )
+    assert get_elevation(47.9995,9.0)[0] in (743, )
+    assert get_elevation(47.9995,9.9990)[0] in (649, )
+    assert get_elevation(47.0005,9.9990)[0] in (1121, )
+    #Test North West (Requires n64e021.hgt)
+    assert get_elevation(64.5407, -20.6408)[0] in (1010, )
+    assert get_elevation(64.0014, -20.001)[0] in (103, )
+    assert get_elevation(64.9995, -20.001)[0] in (782, )
+    assert get_elevation(64.9995, -20.9990)[0] in (265, )
+    assert get_elevation(64.0014, -20.9990)[0] in (388, )
+    #Test South West
+    assert get_elevation(-31.2030, -69.8537)[0] in (4569, )
+    assert get_elevation(-31.0005, -69.001)[0] in (2223, )
+    assert get_elevation(-31.9995, -69.001)[0] in (2047, )
+    assert get_elevation(-31.9995, -69.999)[0] in (4780, )
+    assert get_elevation(-31.0005, -69.999)[0] in (3486, )
+
+    print "Great Success!"
