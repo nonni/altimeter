@@ -4,9 +4,15 @@ def _get_offset(x, y, size):
     """
     Get x,y offset in bytes.
     """
+    if x >= size or y >= size:
+        return None
     return (x + size * (size - y - 1)) * 2
 
 def _weighted_avg(value1, value2, weight):
+    if value1 == None:
+        return value2
+    if value2 == None:
+        return value1
     return value2 * weight + value1 * (1 - weight)
 
 def get_elevation(lat, lon, interpolation=False):
@@ -23,10 +29,10 @@ def get_elevation(lat, lon, interpolation=False):
     frac_lon = int_lon - lon
  
     srtm_path = 'data/%s%02d%s%03d.hgt' % (lat_dir, abs(math.floor(lat)), lon_dir, abs(math.floor(lon)))
-    print "Search path: %s" % srtm_path
-    print "lat: %s, lon: %s" % (lat, lon)
-    print "int_lat: %s, int_lon: %s" % (int_lat, int_lon)
-    print "frac_lat: %s, frac_lon: %s" % (frac_lat, frac_lon)
+    #print "Search path: %s" % srtm_path
+    #print "lat: %s, lon: %s" % (lat, lon)
+    #print "int_lat: %s, int_lon: %s" % (int_lat, int_lon)
+    #print "frac_lat: %s, frac_lon: %s" % (frac_lat, frac_lon)
 
     #Check if file for lat,lon exists.
     if os.path.isfile(srtm_path):
@@ -34,7 +40,7 @@ def get_elevation(lat, lon, interpolation=False):
             f.seek(0, 2)
             file_size = f.tell()
             data_size = int(math.sqrt(file_size/2)) # 2 bytes per sample
-            print "file_size: %s, data_size: %s" % (file_size, data_size)
+            #print "file_size: %s, data_size: %s" % (file_size, data_size)
             #Currently only SRTM3 is supported
             if data_size not in (1201,):
                 return None
@@ -49,30 +55,42 @@ def get_elevation(lat, lon, interpolation=False):
             else:
                 y = abs(frac_lat) * data_size
 
-            print "x: %s, y: %s" % (x,y)
+            #print "x: %s, y: %s" % (x,y)
             int_x = int(x)
             frac_x = x - int_x
             int_y = int(y)
             frac_y = y - int_y
-            print "Offset is %f" % _get_offset(int_x, int_y, data_size)
+            #print "Offset is %f" % _get_offset(int_x, int_y, data_size)
 
             f.seek(_get_offset(int_x, int_y, data_size))
             #Read a big endian 16bit signed integer from file.
             s = struct.unpack('>h', f.read(2))[0]
             
-            print "Fetched struct: %s, at %s.." % (s, f.tell())
+            #print "Fetched struct: %s, at %s.." % (s, f.tell())
 
             if interpolation:
                 #Take weighted average of the 4 nearest observations
-                f.seek(_get_offset(int_x + 1, int_y, data_size))
-                i1 = struct.unpack('>h', f.read(2))[0]
-                print "Interbjudd - x: %s y: %s - %s" % (int_x+1, int_y, i1)
-                f.seek(_get_offset(int_x, int_y + 1, data_size))
-                i2 = struct.unpack('>h', f.read(2))[0]
-                print "Interbjudd - x: %s y: %s - %s" % (int_x, int_y+1, i2)
-                f.seek(_get_offset(int_x + 1, int_y + 1, data_size))
-                i3 = struct.unpack('>h', f.read(2))[0]
-                print "Interbjudd - x: %s y: %s - %s" % (int_x+1, int_y+1, i3)
+                o1 = _get_offset(int_x + 1, int_y, data_size)
+                if o1 != None:
+                    f.seek(o1)
+                    i1 = struct.unpack('>h', f.read(2))[0]
+                else:
+                    i1 = None
+                #print "Interbjudd - x: %s y: %s - %s" % (int_x+1, int_y, i1)
+                o2 = _get_offset(int_x, int_y + 1, data_size)
+                if o2 != None:
+                    f.seek(o2)
+                    i2 = struct.unpack('>h', f.read(2))[0]
+                else:
+                    i2 = None
+                #print "Interbjudd - x: %s y: %s - %s" % (int_x, int_y+1, i2)
+                o3 = _get_offset(int_x + 1, int_y + 1, data_size)
+                if o3 != None:
+                    f.seek(o3)
+                    i3 = struct.unpack('>h', f.read(2))[0]
+                else:
+                    i3 = None
+                #print "Interbjudd - x: %s y: %s - %s" % (int_x+1, int_y+1, i3)
                 s = _weighted_avg(_weighted_avg(s, i1, frac_x), _weighted_avg(i2, i3, frac_x), frac_y)
 
             return s
